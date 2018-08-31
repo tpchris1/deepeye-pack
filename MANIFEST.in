@@ -1,0 +1,3 @@
+include README.md
+include deepeye_pack/jars/rank.model
+include deepeye_pack/jars/RankLib.jar
