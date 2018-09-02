@@ -142,7 +142,7 @@ class deepeye(object):
 
                 temp = i.split(splitflag)
                 res = datetime.date(int(temp[0]),int(temp[1]),int(temp[2]))
-                print res
+                # print res
                 col.append(res)
             col2 = pd.DataFrame({col_name:col})
             table.update(col2)
