@@ -120,7 +120,7 @@ class deepeye(object):
         
         instance.tuple_num = instance.tables[0].tuple_num = table_origin.shape[0]
         for i in range(instance.tables[0].column_num):
-            if instance.tables[0].types[i] == 3: #if there is date type in csv,convert into datetime format
+            if instance.tables[0].types[i] == 3: #if there is date type column in csv,convert into datetime format
                 col_name = table_origin.columns[i]
                 col_type = self.column_types[i]
                 self.csv_handle_changedate(col_name,col_type)
@@ -131,6 +131,20 @@ class deepeye(object):
         return instance
 
     def csv_handle_changedate(self,col_name,col_type):
+        """deal with date type data, wrap to datetime format"""
+        table = self.csv_dataframe
+        if col_type == 'date':
+            table[col_name] = pd.to_datetime(table[col_name]).dt.date
+        elif col_type == 'datetime':
+            table[col_name] = pd.to_datetime(table[col_name]).dt.to_pydatetime()
+        elif col_type == 'year':
+            table[col_name] = pd.to_datetime(table[col_name].apply(lambda x: str(x)+'/1/1')).dt.date
+        return
+            
+                
+    '''
+    def csv_handle_changedate(self,col_name,col_type):
+        """version 0.1 changedate through personal handle"""
         table = self.csv_dataframe
         if col_type == 'date':
             col = []
@@ -158,12 +172,19 @@ class deepeye(object):
             col2 = pd.DataFrame({col_name:col})
             table.update(col2)
             return
+        '''
     
     def show_csv_info(self):
         """print out csv info"""
         self.csv_dataframe
         return
 
+    '''
+    def from_mysql(self,conn,mysql_select_query,*mysql_table_name):
+        
+        return
+    '''
+    
     
     def from_mysql(self,conn,mysql_select_query,*mysql_table_name):
         """import from mysql"""
@@ -186,7 +207,7 @@ class deepeye(object):
             print 'extract table name,column names and column types from mysql query since no table_info is given' + self.mysql_table_name
         self.import_method = methods_of_import[1]
         return
-    
+
     def mysql_handle(self,instance):
         """mysql data handle function"""
         cur=self.mysql_conn.cursor()

@@ -13,13 +13,17 @@
         - Install the .whl by wheel install
         - there is a back up version in this repository under 'mysqldb' folder 
     2. numpy(latest version)
-    3. pandas(latest version)
+    3. pandas(latest version) above ver 0.23.0
 
 ## Usage
-1. Initial code
-    ```py     
+1. Initial
+    1. the type that suppose to import are specified as below:
+        1. numerical: `int`, `float`, `double`
+        2. temporal: `date`, `datetime`, `year`
+        3. categorical: `char`, `varchar`
+    2. example code:
+    ```py
     import deepeye_pack as dp
-    import MySQLdb # for from_mysql() function 
     
     dp = deepeye_pack.deepeye('demo')
 
@@ -30,6 +34,7 @@
 2. Import
     1. from_mysql()
         ```py
+        import MySQLdb # for from_mysql() function 
         # specify mysql parameter
         conn=MySQLdb.connect(host='localhost',port=3306,    user='root',passwd='ppww',db='deepeye',charset='utf8') 
         # import 

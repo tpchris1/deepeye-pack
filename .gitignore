@@ -8,4 +8,4 @@
 /*.egg-info
 
 # data generate by learning_to_rank module
-/deepeye_pack/data
+# /deepeye_pack/data

@@ -29,13 +29,3 @@ class Features(object):
         self.interval=''
         self.distinct_values=[]
         self.interval_bins=[]
-
-
-
-
-
-
-
-
-
-

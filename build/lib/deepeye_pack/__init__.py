@@ -164,6 +164,12 @@ class deepeye(object):
         self.csv_dataframe
         return
 
+    '''
+    def from_mysql(self,conn,mysql_select_query,*mysql_table_name):
+        
+        return
+    '''
+    
     
     def from_mysql(self,conn,mysql_select_query,*mysql_table_name):
         """import from mysql"""
@@ -186,7 +192,7 @@ class deepeye(object):
             print 'extract table name,column names and column types from mysql query since no table_info is given' + self.mysql_table_name
         self.import_method = methods_of_import[1]
         return
-    
+
     def mysql_handle(self,instance):
         """mysql data handle function"""
         cur=self.mysql_conn.cursor()
