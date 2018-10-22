@@ -3,7 +3,10 @@ import os
 import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
+
 import MySQLdb
+from sqlalchemy import create_engine # special SQL tool for mysql_handle(the method of using pd.read_sql_table() function)
+
 import numpy as np
 import pandas as pd
 import datetime
@@ -50,6 +53,9 @@ class deepeye(object):
             self.column_types = [i[1] for i in column_info]
         else:
             raise TypeError("unsupported argument types (%s, %s)" % (type(column_info), type(column_info2)))
+        for idx,val in enumerate(self.column_types):
+            if Type.getType(val.lower())==0:
+                raise StandardError("doesnt support this column_type \' %s \' of column name \' %s \',please check Readme for specification " %(val,self.column_names[idx]))
         self.is_table_info = True
         return
     
@@ -127,7 +133,7 @@ class deepeye(object):
         
         #change table column name with table_info column_names
         for i in range(len(table_origin.columns)): table_origin.rename(columns={ table_origin.columns[i] : in_column_name[i] }, inplace=True) 
-        instance.tables[0].D = table_origin.values.tolist()
+        instance.tables[0].D = table_origin.values.tolist() #dataframe to list type and feed to D(where to store all the table info )
         return instance
 
     def csv_handle_changedate(self,col_name,col_type):
@@ -140,109 +146,49 @@ class deepeye(object):
         elif col_type == 'year':
             table[col_name] = pd.to_datetime(table[col_name].apply(lambda x: str(x)+'/1/1')).dt.date
         return
-            
-                
-    '''
-    def csv_handle_changedate(self,col_name,col_type):
-        """version 0.1 changedate through personal handle"""
-        table = self.csv_dataframe
-        if col_type == 'date':
-            col = []
-            for i in table[col_name]:
-                if isinstance(i,str):
-                    if i.find('/') >= 0: splitflag = '/'
-                    elif i.find('-') >=0: splitflag = '-'
-                    else: print "wrong date type of"+col_name+"in"+self.table_name; sys.exit(0); 
-
-                temp = i.split(splitflag)
-                res = datetime.date(int(temp[0]),int(temp[1]),int(temp[2]))
-                # print res
-                col.append(res)
-            col2 = pd.DataFrame({col_name:col})
-            table.update(col2)
-            return
-        elif col_type == 'datetime':
-            return
-        elif col_type == 'year':
-            col = []
-            for i in table[col_name]:
-                res = datetime.date(int(i),1,1)
-                col.append(res)
-            # print col # DEBUG
-            col2 = pd.DataFrame({col_name:col})
-            table.update(col2)
-            return
-        '''
     
     def show_csv_info(self):
         """print out csv info"""
         self.csv_dataframe
         return
 
-    '''
-    def from_mysql(self,conn,mysql_select_query,*mysql_table_name):
-        
-        return
-    '''
     
-    
-    def from_mysql(self,conn,mysql_select_query,*mysql_table_name):
+    def from_mysql(self,host,port,user,passwd,db,query):
         """import from mysql"""
-        # self.error_throw('from')
-        # if self.import_method != methods_of_import[0]:
-        #     raise StandardError("already imported through %s" % self.import_method)
-
+        conn = MySQLdb.connect(host=host,port=port,user=user,passwd=passwd,db=db,charset='utf8')
         self.mysql_conn = conn
-        self.mysql_query_showTable = mysql_select_query
+        self.mysql_query_showTable = query
+        
+        self.mysql_table_name = self.mysql_query_showTable.split('`')[1]
+        self.mysql_query_showInfo = 'describe' + ' ' + self.mysql_table_name
 
-        if mysql_table_name: 
-            self.mysql_table_name = mysql_table_name
-            self.mysql_query_showInfo = 'describe' + ' ' + mysql_table_name
-        elif 'table_name' in self.__dict__:
-            self.mysql_table_name = self.table_name
-            self.mysql_query_showInfo = 'describe' + ' ' + self.table_name
-        else:
-            self.mysql_table_name = self.mysql_query_showTable.split('`')[1]
-            self.mysql_query_showInfo = 'describe' + ' ' + self.mysql_table_name
-            print 'extract table name,column names and column types from mysql query since no table_info is given' + self.mysql_table_name
         self.import_method = methods_of_import[1]
         return
+    
 
     def mysql_handle(self,instance):
-        """mysql data handle function"""
+        """mysql data import and handle function"""
         cur=self.mysql_conn.cursor()
 
-        instance.column_num = instance.tables[0].column_num = cur.execute(self.mysql_query_showInfo)
-        mysql_table_description = map(list,cur.fetchall())
-
-        c_name_list=[]
-        t_name_list=[]
-        for i in mysql_table_description: 
-            c_name = i[0].encode('ascii','ignore')
-            t_name = i[1].encode('ascii','ignore')
-            c_name_list.append(c_name)
-            t_name_list.append(t_name)
-            instance.tables[0].names.append(c_name)
-            instance.tables[0].types.append(Type.getType(t_name.lower()))
-        if self.is_table_info == False:
-            self.column_names = c_name_list
-            self.column_types = t_name_list
+        instance.column_num = instance.tables[0].column_num = len(self.column_names)
+        instance.tables[0].names = self.column_names
+        for i in self.column_types: 
+            instance.tables[0].types.append(Type.getType(i.lower()))
 
         instance.tables[0].origins=[i for i in range(instance.tables[0].column_num)]
         instance.tuple_num=instance.tables[0].tuple_num=cur.execute(self.mysql_query_showTable)
-        instance.tables[0].D=map(list,cur.fetchall())
+        self.mysql_dataframe=pd.DataFrame(map(list,cur.fetchall()),columns=self.column_names)
+        
         # print self.column_types
         for idx,val in enumerate(self.column_types):
             if val[0:4] == 'year':
-                # print idx,val
-                # print instance.tables[0].D[0]
-                for row in instance.tables[0].D:
-                    row[idx] = datetime.date(row[idx],1,1)
-        # print instance.tables[0].D[0] # DEBUG
+               self.mysql_dataframe[self.column_names[idx]] = pd.to_datetime(self.mysql_dataframe[self.column_names[idx]].apply(lambda x: str(x)+'/1/1')).dt.date
+        
         cur.close()
         self.mysql_conn.close()
+        instance.tables[0].D = self.mysql_dataframe.values.tolist()
         return instance
-
+    
     def show_mysql_info(self):
         """print out mysql info"""
         print self.mysql_conn

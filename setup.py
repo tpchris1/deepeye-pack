@@ -6,7 +6,7 @@ def readme():
         return f.read()
 
 setup(name='deepeye_pack',
-      version='0.1',
+      version='0.2',
       description='a Python package for DeepEye:Towards automatic Data Visualization API',
       long_description=readme(),
       long_description_content_type="text/markdown",
